@@ -11,12 +11,12 @@ app.use(cors()); // Use CORS middleware to enable CORS
 app.use(express.json());
 
 app.post('/fetch-calendly', async (req, res) => {
-  const { calendlyUrls } = req.body; // Expecting an array of URLs
+  const { calendlyUrls } = req.body;
 
   try {
     const browser = await puppeteer.launch();
 
-    const allAvailableTimesPromises = calendlyUrls.map(async (calendlyUrl) => {
+    const allTimesByDayPromises = calendlyUrls.map(async (calendlyUrl) => {
       const page = await browser.newPage();
       await page.goto(calendlyUrl, { waitUntil: 'networkidle2' });
 
@@ -28,7 +28,7 @@ app.post('/fetch-calendly', async (req, res) => {
         return selectors;
       });
 
-      let timesForUrl = [];
+      let timesByDayForUrl = {};
 
       for (const daySelector of availableDaysSelectors) {
         const datePart = daySelector.split(' - ')[0];
@@ -44,29 +44,42 @@ app.post('/fetch-calendly', async (req, res) => {
           return times;
         });
 
-        const timesWithDate = availableTimes.map(time => `${datePart}, ${time}`);
-        timesForUrl = timesForUrl.concat(timesWithDate);
+        if (!timesByDayForUrl[datePart]) {
+          timesByDayForUrl[datePart] = new Set();
+        }
+
+        availableTimes.forEach(time => timesByDayForUrl[datePart].add(time));
 
         await page.goto(calendlyUrl, { waitUntil: 'networkidle2' });
       }
 
       await page.close();
-      return timesForUrl;
+      return timesByDayForUrl;
     });
 
-    const allAvailableTimesArrays = await Promise.all(allAvailableTimesPromises);
+    const allTimesByDayArrays = await Promise.all(allTimesByDayPromises);
     await browser.close();
 
-    // Find the intersection of all arrays
-    const commonAvailableTimes = allAvailableTimesArrays.reduce((accumulator, currentArray) => {
-      if (accumulator.length === 0) {
-        return currentArray;
-      }
-      return accumulator.filter(time => currentArray.includes(time));
-    }, []);
+    // Intersect times for each day across all URLs
+    const commonTimesByDay = allTimesByDayArrays.reduce((acc, timesByDay) => {
+      Object.keys(timesByDay).forEach(day => {
+        if (!acc[day]) {
+          acc[day] = timesByDay[day];
+        } else {
+          acc[day] = new Set([...acc[day]].filter(time => timesByDay[day].has(time)));
+        }
+      });
+      return acc;
+    }, {});
 
-    console.log(`Common available times being sent to the front-end:`, { availableTimes: commonAvailableTimes });
-    res.json({ availableTimes: commonAvailableTimes });
+    // Convert Set to Array for each day and prepare final structure
+    const finalTimesByDay = Object.keys(commonTimesByDay).map(dayDate => ({
+      dayDate,
+      times: [...commonTimesByDay[dayDate]]
+    }));
+
+    console.log(`Deduplicated and grouped available times being sent to the front-end:`, finalTimesByDay);
+    res.json({ availableTimes: finalTimesByDay });
   } catch (error) {
     console.error('Error fetching Calendly pages:', error);
     res.status(500).send('Error fetching Calendly pages');
