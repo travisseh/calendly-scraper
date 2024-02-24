@@ -11,59 +11,65 @@ app.use(cors()); // Use CORS middleware to enable CORS
 app.use(express.json());
 
 app.post('/fetch-calendly', async (req, res) => {
-  const { calendlyUrl } = req.body;
-  console.log(`Received request to fetch: ${calendlyUrl}`); // Log the requested URL
+  const { calendlyUrls } = req.body; // Expecting an array of URLs
 
   try {
     const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto(calendlyUrl, { waitUntil: 'networkidle2' });
-    console.log(`Page loaded: ${calendlyUrl}`); // Confirm page load
 
-    const availableDaysSelectors = await page.evaluate(() => {
-      const selectors = [];
-      document.querySelectorAll('button[aria-label*="- Times available"]').forEach(element => {
-        selectors.push(element.getAttribute('aria-label'));
+    const allAvailableTimesPromises = calendlyUrls.map(async (calendlyUrl) => {
+      const page = await browser.newPage();
+      await page.goto(calendlyUrl, { waitUntil: 'networkidle2' });
+
+      const availableDaysSelectors = await page.evaluate(() => {
+        const selectors = [];
+        document.querySelectorAll('button[aria-label*="- Times available"]').forEach(element => {
+          selectors.push(element.getAttribute('aria-label'));
+        });
+        return selectors;
       });
-      return selectors;
+
+      let timesForUrl = [];
+
+      for (const daySelector of availableDaysSelectors) {
+        const datePart = daySelector.split(' - ')[0];
+
+        await page.click(`button[aria-label="${daySelector}"]`);
+        await page.waitForSelector('button[data-start-time]', { visible: true });
+
+        const availableTimes = await page.evaluate(() => {
+          const times = [];
+          document.querySelectorAll('button[data-start-time]').forEach(element => {
+            times.push(element.textContent.trim());
+          });
+          return times;
+        });
+
+        const timesWithDate = availableTimes.map(time => `${datePart}, ${time}`);
+        timesForUrl = timesForUrl.concat(timesWithDate);
+
+        await page.goto(calendlyUrl, { waitUntil: 'networkidle2' });
+      }
+
+      await page.close();
+      return timesForUrl;
     });
 
-    console.log(`Found ${availableDaysSelectors.length} days with available times.`); // Log the count of found days
-
-    let allAvailableTimes = [];
-
-    for (const daySelector of availableDaysSelectors) {
-      console.log(`Processing day: ${daySelector}`); // Log the day being processed
-      // Extract just the date part from the daySelector
-      const datePart = daySelector.split(' - ')[0];
-
-      await page.click(`button[aria-label="${daySelector}"]`);
-      await page.waitForSelector('button[data-start-time]', { visible: true });
-
-      const availableTimes = await page.evaluate(() => {
-        const times = [];
-        document.querySelectorAll('button[data-start-time]').forEach(element => {
-          times.push(element.textContent.trim());
-        });
-        return times;
-      });
-
-      // Append the date part to each time slot
-      const timesWithDate = availableTimes.map(time => `${datePart}, ${time}`);
-      allAvailableTimes = allAvailableTimes.concat(timesWithDate);
-
-      console.log(`Found ${availableTimes.length} times for ${daySelector}.`); // Log the count of times found for the day
-      await page.goto(calendlyUrl, { waitUntil: 'networkidle2' }); // Navigate back for the next iteration
-    }
-
+    const allAvailableTimesArrays = await Promise.all(allAvailableTimesPromises);
     await browser.close();
-    console.log(`Sending back ${allAvailableTimes.length} available times.`); // Log the total count of times being sent back
-    // Log the entire response before sending it
-    console.log(`Final response being sent to the front-end:`, { availableTimes: allAvailableTimes });
-    res.json({ availableTimes: allAvailableTimes });
+
+    // Find the intersection of all arrays
+    const commonAvailableTimes = allAvailableTimesArrays.reduce((accumulator, currentArray) => {
+      if (accumulator.length === 0) {
+        return currentArray;
+      }
+      return accumulator.filter(time => currentArray.includes(time));
+    }, []);
+
+    console.log(`Common available times being sent to the front-end:`, { availableTimes: commonAvailableTimes });
+    res.json({ availableTimes: commonAvailableTimes });
   } catch (error) {
-    console.error('Error fetching Calendly page:', error);
-    res.status(500).send('Error fetching Calendly page');
+    console.error('Error fetching Calendly pages:', error);
+    res.status(500).send('Error fetching Calendly pages');
   }
 });
 
