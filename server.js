@@ -25,13 +25,18 @@ app.use((req, res, next) => {
   next();
 });
 
+console.log("hi")
+
 app.use(express.json());
 
 app.use('/fetch-calendly', async (req, res) => {
   const { calendlyUrls } = req.body;
 
   try {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+      executablePath: process.env.GOOGLE_CHROME_BIN,
+      args: ['--no-sandbox', '--headless', '--disable-gpu', '--disable-dev-shm-usage']
+    });
 
     const allTimesByDayPromises = calendlyUrls.map(async (calendlyUrl) => {
       const page = await browser.newPage();
