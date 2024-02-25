@@ -35,7 +35,17 @@ app.use('/fetch-calendly', async (req, res) => {
   try {
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote', '--single-process', '--disable-gpu']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ],
+      executablePath: process.env.GOOGLE_CHROME_BIN || null, // Use the Chrome binary from the buildpack if available
     });
 
     // Process each URL in parallel using Promise.all
@@ -84,7 +94,6 @@ app.use('/fetch-calendly', async (req, res) => {
 
         // Navigate back or close the page to start fresh for the next URL
         await page.goto('about:blank');
-        await page.goto(calendlyUrl, { waitUntil: 'networkidle2' });
       }
 
       await page.close();
