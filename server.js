@@ -34,12 +34,20 @@ app.use('/fetch-calendly', async (req, res) => {
 
   try {
     const browser = await puppeteer.launch({
-      executablePath: process.env.GOOGLE_CHROME_BIN,
-      args: ['--no-sandbox', '--headless', '--disable-gpu', '--disable-dev-shm-usage']
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote', '--single-process', '--disable-gpu']
     });
 
     const allTimesByDayPromises = calendlyUrls.map(async (calendlyUrl) => {
       const page = await browser.newPage();
+      await page.setRequestInterception(true);
+      page.on('request', (req) => {
+        if (['image', 'stylesheet', 'font'].includes(req.resourceType())) {
+          req.abort();
+        } else {
+          req.continue();
+        }
+      });
       await page.goto(calendlyUrl, { waitUntil: 'networkidle2' });
 
       const availableDaysSelectors = await page.evaluate(() => {
