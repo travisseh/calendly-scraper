@@ -23,6 +23,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+app.options('*', cors()); // Enable preflight across-the-board
 
 app.use('/fetch-calendly', async (req, res) => {
   const { calendlyUrls } = req.body;
@@ -99,8 +100,6 @@ app.use('/fetch-calendly', async (req, res) => {
     res.status(500).send('Error fetching Calendly pages');
   }
 });
-
-app.options('*', cors()); // Enable preflight across-the-board
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
