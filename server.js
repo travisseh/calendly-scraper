@@ -11,25 +11,10 @@ const PORT = 3001;
 const allowedOrigins = ['https://calendly-travisseh.vercel.app', 'http://localhost:3000', 'https://calendly-phi.vercel.app'];
 
 // Middleware to set CORS headers
-app.use((req, res, next) => {
-  // Specify the origin you want to allow requests from
-  res.header('Access-Control-Allow-Origin', 'https://calendly-phi.vercel.app');
-  
-  // Specify the headers that can be used during the actual request
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Specify the methods allowed when accessing the resource in response to a preflight request
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    // Tell the browser to allow the specified methods and headers for the actual request
-    res.header('Access-Control-Allow-Methods', 'PUT, POST, PATCH, DELETE, GET');
-    return res.status(200).json({});
-  }
-  
-  next();
-});
+app.use(cors({
+  origin: ['https://calendly-phi.vercel.app', 'http://localhost:3000'], // Add all your allowed origins here
+  optionsSuccessStatus: 200
+}));
 
 app.use(express.json());
 
