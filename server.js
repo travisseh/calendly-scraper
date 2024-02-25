@@ -12,7 +12,9 @@ const allowedOrigins = ['https://calendly-travisseh.vercel.app', 'http://localho
 
 // Middleware to set CORS headers
 app.use(cors({
-  origin: ['https://calendly-phi.vercel.app', 'http://localhost:3000'], // Add all your allowed origins here
+  origin: ['https://calendly-phi.vercel.app', 'http://localhost:3000'], // Your allowed origins
+  methods: ['GET', 'POST', 'OPTIONS'], // Add other methods as needed
+  allowedHeaders: ['Content-Type', 'Authorization'], // Add other headers as needed
   optionsSuccessStatus: 200
 }));
 
