@@ -16,9 +16,15 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
+// Logging middleware
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.path}`);
+  next();
+});
+
 app.use(express.json());
 
-app.post('/', async (req, res) => {
+app.use('/', async (req, res) => {
   const { calendlyUrls } = req.body;
 
   try {
@@ -93,6 +99,8 @@ app.post('/', async (req, res) => {
     res.status(500).send('Error fetching Calendly pages');
   }
 });
+
+app.options('*', cors()); // Respond to preflight requests
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
