@@ -7,7 +7,22 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = 3001;
 
-app.use(cors()); // Use CORS middleware to enable CORS
+// Define allowed origins
+const allowedOrigins = ['https://calendly-phi.vercel.app', 'http://localhost:3000'];
+
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
+app.use(cors(corsOptions)); // Use CORS middleware to enable CORS
 app.use(express.json());
 
 app.post('/fetch-calendly', async (req, res) => {
