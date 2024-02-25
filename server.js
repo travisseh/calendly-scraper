@@ -18,7 +18,7 @@ app.use(cors({
 
 app.use(express.json());
 
-app.post('/fetch-calendly', async (req, res) => {
+app.post('/', async (req, res) => {
   const { calendlyUrls } = req.body;
 
   try {
