@@ -24,7 +24,7 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-app.use('/', async (req, res) => {
+app.use('/fetch-calendly', async (req, res) => {
   const { calendlyUrls } = req.body;
 
   try {
