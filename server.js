@@ -38,6 +38,7 @@ app.use('/fetch-calendly', async (req, res) => {
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote', '--single-process', '--disable-gpu']
     });
 
+    // Process each URL in parallel using Promise.all
     const allTimesByDayPromises = calendlyUrls.map(async (calendlyUrl) => {
       const page = await browser.newPage();
       await page.setRequestInterception(true);
@@ -48,7 +49,8 @@ app.use('/fetch-calendly', async (req, res) => {
           req.continue();
         }
       });
-      await page.goto(calendlyUrl, { waitUntil: 'networkidle2' });
+
+      await page.goto(calendlyUrl, { waitUntil: 'domcontentloaded' }); // Optimized waitUntil
 
       const availableDaysSelectors = await page.evaluate(() => {
         const selectors = [];
@@ -64,7 +66,7 @@ app.use('/fetch-calendly', async (req, res) => {
         const datePart = daySelector.split(' - ')[0];
 
         await page.click(`button[aria-label="${daySelector}"]`);
-        await page.waitForSelector('button[data-start-time]', { visible: true });
+        await page.waitForSelector('button[data-start-time]', { visible: true, timeout: 5000 }); // Optimized wait
 
         const availableTimes = await page.evaluate(() => {
           const times = [];
@@ -80,6 +82,8 @@ app.use('/fetch-calendly', async (req, res) => {
 
         availableTimes.forEach(time => timesByDayForUrl[datePart].add(time));
 
+        // Navigate back or close the page to start fresh for the next URL
+        await page.goto('about:blank');
         await page.goto(calendlyUrl, { waitUntil: 'networkidle2' });
       }
 
