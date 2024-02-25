@@ -17,7 +17,7 @@ origin: '*', // Allow all originsallowed origins
   allowedHeaders: ['Content-Type', 'Authorization'], // Add other headers as needed
   optionsSuccessStatus: 200
 }));
-
+console.log("hello")
 // Logging middleware
 app.use((req, res, next) => {
   console.log(`Incoming request: ${req.method} ${req.path}`);
