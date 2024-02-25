@@ -8,7 +8,7 @@ const app = express();
 const PORT = 3001;
 
 // Define allowed origins
-const allowedOrigins = ['https://calendly-phi.vercel.app', 'http://localhost:3000'];
+const allowedOrigins = ['https://calendly-travisseh.vercel.app', 'http://localhost:3000'];
 
 // CORS configuration
 const corsOptions = {
