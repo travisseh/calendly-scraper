@@ -16,6 +16,7 @@ app.use(cors({
   optionsSuccessStatus: 200 // Ensure compatibility for legacy browsers
 }));
 console.log("hello")
+app.options('*', cors()); // Enable preflight across-the-board
 // Logging middleware
 app.use((req, res, next) => {
   console.log(`Incoming request: ${req.method} ${req.path}`);
@@ -23,7 +24,6 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
-app.options('*', cors()); // Enable preflight across-the-board
 
 app.use('/fetch-calendly', async (req, res) => {
   const { calendlyUrls } = req.body;
