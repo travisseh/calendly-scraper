@@ -5,17 +5,19 @@ const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 
 const app = express();
-const PORT = 3001;
+// Use the environment variable PORT provided by Heroku or fallback to 3001 for local development
+const PORT = process.env.PORT || 3001;
 
 // Middleware to set CORS headers as open as possible
 app.use(cors({
-  origin: true, // Reflect the request origin, as defined by the Vary header
+  origin: '*', // Allow all origins
   methods: ['GET', 'POST', 'OPTIONS'], // Allow all standard methods
   allowedHeaders: ['Content-Type', 'Authorization'], // Allow common headers
   credentials: true, // Allow cookies to be sent with requests
-  optionsSuccessStatus: 200 // Ensure compatibility for legacy browsers
+  optionsSuccessStatus: 204 // Some legacy browsers choke on status 200
 }));
 console.log("hello")
+// Enable preflight requests for all routes
 app.options('*', cors()); // Enable preflight across-the-board
 // Logging middleware
 app.use((req, res, next) => {
