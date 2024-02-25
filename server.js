@@ -7,15 +7,13 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = 3001;
 
-// Define allowed origins
-const allowedOrigins = ['https://calendly-travisseh.vercel.app', 'http://localhost:3000', 'https://calendly-phi.vercel.app'];
-
-// Middleware to set CORS headers
+// Middleware to set CORS headers as open as possible
 app.use(cors({
-origin: '*', // Allow all originsallowed origins
-  methods: ['GET', 'POST', 'OPTIONS'], // Add other methods as needed
-  allowedHeaders: ['Content-Type', 'Authorization'], // Add other headers as needed
-  optionsSuccessStatus: 200
+  origin: true, // Reflect the request origin, as defined by the Vary header
+  methods: ['GET', 'POST', 'OPTIONS'], // Allow all standard methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow common headers
+  credentials: true, // Allow cookies to be sent with requests
+  optionsSuccessStatus: 200 // Ensure compatibility for legacy browsers
 }));
 console.log("hello")
 // Logging middleware
@@ -102,7 +100,7 @@ app.use('/fetch-calendly', async (req, res) => {
   }
 });
 
-app.options('*', cors()); // Respond to preflight requests
+app.options('*', cors()); // Enable preflight across-the-board
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
